@@ -1,1 +1,57 @@
-body{font-family:system-ui,sans-serif;background:#f8fafc;color:#172033;margin:0}main{max-width:720px;margin:40px auto;padding:24px}form,.message{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin:14px 0}input,textarea,button{font:inherit;width:100%;padding:10px;margin:6px 0;box-sizing:border-box}textarea{min-height:90px}button{background:#2563eb;color:white;border:0;border-radius:8px;font-weight:700}.meta{color:#64748b;font-size:.85rem}
+body{
+    font-family: system-ui, sans-serif;
+    background: #0f172a; /* 暗い背景色に変更 */
+    color: #f8fafc; /* 全体の文字を白色に変更 */
+    margin:0
+}
+
+main{
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 24px
+}
+
+form, .message{
+    background: #1e293b; /* カード部分の背景を少し明るめの黒に変更 */
+    border:1px solid #334155; /* 枠線も暗めに変更 */
+    border-radius: 12px;
+    padding: 16px;
+    margin: 14px 0
+}
+
+/* 入力欄だけの色の設定(追加) */
+input, textarea {
+  background: #0f172a; /* 入力欄の背景を暗く */
+  color: #f8fafc; /* 入力される文字色を白に */
+  border: 1px solid #475569; /* 入力欄の枠線 */
+  border-radius: 6px
+}
+
+input,textarea,button{
+    font: inherit;
+    width: 100%;
+    padding: 10px;
+    margin: 6px 0;
+    box-sizing: border-box
+}
+
+textarea{
+    min-height: 90px
+}
+
+button{
+    background: #3b82f6; /* 少し明るい青に変更 */
+    color: white;
+    border: 0;
+    border-radius: 8px;
+    font-weight: 700
+}
+
+button:hover {
+  background: #2563eb /* カーソルをボタンに合わせた時の色を追加 */
+}
+
+.meta{
+    color: #94a3b8;/* 日付などの補足情報もグレーに変更 */
+    font-size: .85rem
+}
