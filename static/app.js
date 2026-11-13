@@ -7,7 +7,9 @@ async function loadMessages() {
             <article class="message">
                 <b>${escapeHtml(x.name)}</b>
                 <p>${escapeHtml(x.message)}</p>
-                <div class="meta">#${x.id}</div>
+                <div class="meta">
+                    #${x.id} | ${formatDate(x.created_at)}
+                </div>
             </article>
         `).join('');
 }
@@ -16,6 +18,19 @@ function escapeHtml(s) {
     const d = document.createElement('div');
     d.textContent = s;
     return d.innerHTML;
+}
+
+// 投稿日時を整形する関数
+function formatDate(dateString) {
+    const date = new Date(dateString);
+
+    return date.toLocaleString('ja-JP', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
 // 文字数を更新する関数
@@ -28,11 +43,12 @@ function updateCount(inputId, countId, maxLength) {
     count.textContent = `${currentLength} / ${maxLength}文字`;
 }
 
-// 入力時に文字数を更新
+// Nicknameの入力時に文字数を更新
 document.querySelector('#name').addEventListener('input', () => {
     updateCount('#name', '#name-count', 30);
 });
 
+// Messageの入力時に文字数を更新
 document.querySelector('#message').addEventListener('input', () => {
     updateCount('#message', '#message-count', 300);
 });
@@ -60,7 +76,7 @@ document.querySelector('#form').addEventListener('submit', async e => {
     if (r.ok) {
         document.querySelector('#message').value = '';
 
-        // 投稿後に文字数もリセット
+        // 投稿後にMessageの文字数もリセット
         updateCount('#message', '#message-count', 300);
 
         await loadMessages();
