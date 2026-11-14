@@ -12,6 +12,22 @@ async function loadMessages(){
                 </div>
             </article>`
         ).join('')
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async e => {
+            const id = e.target.getAttribute('data-id');
+            if (!confirm(`投稿 #${id} を削除しますか？`)) return;
+
+            const res = await fetch(`/api/messages/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok || res.status === 204) {
+                await loadMessages();
+            } else {
+                alert('削除に失敗しました');
+            }
+        });
+    });
 }
 
 function escapeHtml(s){
