@@ -32,21 +32,44 @@ function formatDate(dateString){
     });
 }
 
+//ボタン制御関数
+function setSubmitButtonState(isSubmitting) {
+    const btn = document.querySelector('#form button') || document.querySelector('button[type="submit"]');
+    if (!btn) return;
+    
+    if (isSubmitting) {
+        btn.disabled = true;
+        btn._originalText = btn.textContent;
+        btn.textContent = '送信中...';
+    } else {
+        btn.disabled = false;
+        btn.textContent = btn._originalText || '送信';
+    }
+}
+
 document.querySelector('#form').addEventListener('submit',async e=>{e.preventDefault();
     const name=document.querySelector('#name').value;
     const message=document.querySelector('#message').value;
 
-    const r=await fetch('/api/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name,message})
-    });
+    // 送信開始：ボタンを無効化して連打をブロック
+    setSubmitButtonState(true);
 
-    document.querySelector('#status').textContent=
-        r.ok?'投稿しました':'投稿に失敗しました';
-    if(r.ok){
-        document.querySelector('#message').value='';
-        await loadMessages();
+    try {
+        const r=await fetch('/api/messages',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({name,message})
+        });
+
+        document.querySelector('#status').textContent=
+            r.ok?'投稿しました':'投稿に失敗しました';
+        if(r.ok){
+            document.querySelector('#message').value='';
+            await loadMessages();
+        }
+    } finally {
+        // 送信終了：通信が成功しても失敗しても、必ずボタンを元の状態に戻す
+        setSubmitButtonState(false);
     }
 });
 
