@@ -10,8 +10,30 @@ async function loadMessages() {
                 <div class="meta">
                     #${x.id} | ${formatDate(x.created_at)}
                 </div>
+                <button class="delete-btn" data-id="${x.id}">
+                    削除
+                </button>
             </article>
         `).join('');
+
+    // 削除ボタンのイベント登録
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async e => {
+            const id = e.currentTarget.getAttribute('data-id');
+
+            if (!confirm(`投稿 #${id} を削除しますか？`)) return;
+
+            const res = await fetch(`/api/messages/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok || res.status === 204) {
+                await loadMessages();
+            } else {
+                alert('削除に失敗しました');
+            }
+        });
+    });
 }
 
 function escapeHtml(s) {
@@ -57,6 +79,23 @@ document.querySelector('#message').addEventListener('input', () => {
 updateCount('#name', '#name-count', 30);
 updateCount('#message', '#message-count', 300);
 
+// ボタン制御関数
+function setSubmitButtonState(isSubmitting) {
+    const btn = document.querySelector('#form button') ||
+                document.querySelector('button[type="submit"]');
+
+    if (!btn) return;
+
+    if (isSubmitting) {
+        btn.disabled = true;
+        btn._originalText = btn.textContent;
+        btn.textContent = '送信中...';
+    } else {
+        btn.disabled = false;
+        btn.textContent = btn._originalText || '送信';
+    }
+}
+
 // 投稿処理
 document.querySelector('#form').addEventListener('submit', async e => {
     e.preventDefault();
@@ -64,22 +103,30 @@ document.querySelector('#form').addEventListener('submit', async e => {
     const name = document.querySelector('#name').value;
     const message = document.querySelector('#message').value;
 
-    const r = await fetch('/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, message })
-    });
+    // 送信開始：連打を防止
+    setSubmitButtonState(true);
 
-    document.querySelector('#status').textContent =
-        r.ok ? '投稿しました' : '投稿に失敗しました';
+    try {
+        const r = await fetch('/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, message })
+        });
 
-    if (r.ok) {
-        document.querySelector('#message').value = '';
+        document.querySelector('#status').textContent =
+            r.ok ? '投稿しました' : '投稿に失敗しました';
 
-        // 投稿後にMessageの文字数もリセット
-        updateCount('#message', '#message-count', 300);
+        if (r.ok) {
+            document.querySelector('#message').value = '';
 
-        await loadMessages();
+            // 文字数カウントをリセット
+            updateCount('#message', '#message-count', 300);
+
+            await loadMessages();
+        }
+    } finally {
+        // 送信終了：ボタンを元に戻す
+        setSubmitButtonState(false);
     }
 });
 
