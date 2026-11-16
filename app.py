@@ -104,6 +104,90 @@ def delete_message(message_id):
 
     return "", 204
 
+# ==========================================
+# 参加者募集機能
+# ==========================================
+def init_recruitment_db():
+    with connect() as con:
+        con.execute("""CREATE TABLE IF NOT EXISTS recruitments (
+            message_id INTEGER PRIMARY KEY,
+            capacity INTEGER NOT NULL
+        )""")
+        con.execute("""CREATE TABLE IF NOT EXISTS participants (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            UNIQUE(message_id, name)
+        )""")
+
+# モジュール読み込み時にテーブルを自動作成（既存DBもそのまま使えます）
+init_recruitment_db()
+
+@app.get("/api/recruitments")
+def get_recruitments():
+    with connect() as con:
+        recs = con.execute("SELECT message_id, capacity FROM recruitments").fetchall()
+        parts = con.execute("SELECT message_id, name FROM participants ORDER BY id ASC").fetchall()
+
+    result = {}
+    for r in recs:
+        result[str(r["message_id"])] = {
+            "capacity": r["capacity"],
+            "participants": []
+        }
+    for p in parts:
+        mid = str(p["message_id"])
+        if mid in result:
+            result[mid]["participants"].append(p["name"])
+    return jsonify(result)
+
+@app.post("/api/recruitments")
+def create_recruitment():
+    data = request.get_json(silent=True) or {}
+    message_id = data.get("message_id")
+    capacity = data.get("capacity")
+
+    if not isinstance(message_id, int) or not isinstance(capacity, int) or not (1 <= capacity <= 50):
+        return jsonify({"error": "invalid message_id or capacity (1-50)"}), 400
+
+    with connect() as con:
+        con.execute(
+            "INSERT OR REPLACE INTO recruitments(message_id, capacity) VALUES(?, ?)",
+            (message_id, capacity)
+        )
+    return jsonify({"message_id": message_id, "capacity": capacity}), 201
+
+@app.post("/api/recruitments/<int:message_id>/join")
+def join_recruitment(message_id):
+    data = request.get_json(silent=True) or {}
+    name = str(data.get("name", "")).strip()[:30]
+    if not name:
+        return jsonify({"error": "参加者名を入力してください"}), 400
+
+    with connect() as con:
+        rec = con.execute(
+            "SELECT capacity FROM recruitments WHERE message_id = ?",
+            (message_id,)
+        ).fetchone()
+        if not rec:
+            return jsonify({"error": "募集が見つかりません"}), 404
+
+        count = con.execute(
+            "SELECT COUNT(*) AS cnt FROM participants WHERE message_id = ?",
+            (message_id,)
+        ).fetchone()["cnt"]
+        if count >= rec["capacity"]:
+            return jsonify({"error": "すでに定員に達しています"}), 400
+
+        try:
+            con.execute(
+                "INSERT INTO participants(message_id, name) VALUES(?, ?)",
+                (message_id, name)
+            )
+        except sqlite3.IntegrityError:
+            return jsonify({"error": "同じ名前で既に参加登録されています"}), 400
+
+    return jsonify({"ok": True}), 201
 
 # いいね機能
 @app.post("/api/messages/<int:message_id>/like")

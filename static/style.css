@@ -64,6 +64,62 @@ button:hover {
     margin: -2px 4px 10px;
 }
 
+/* ==========================================
+   参加者募集機能用スタイル
+   ========================================== */
+.recruitment-box {
+    margin-top: 12px;
+    padding: 12px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+}
+
+.recruitment-header {
+    margin-bottom: 6px;
+}
+
+.recruitment-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.recruitment-badge.open {
+    background: #10b981;
+    color: #064e3b;
+}
+
+.recruitment-badge.full {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.recruitment-members {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+}
+
+.recruitment-join-row {
+    display: flex;
+    gap: 8px;
+}
+
+.recruitment-join-row input {
+    flex: 1;
+    margin: 0;
+}
+
+.recruitment-join-row button {
+    width: auto;
+    margin: 0;
+    padding: 0 16px;
+    white-space: nowrap;
+}
+
 /* いいねボタン */
 .like-btn {
     width: auto;

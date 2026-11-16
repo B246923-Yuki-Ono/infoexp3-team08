@@ -228,3 +228,121 @@ document.querySelector('#form').addEventListener('submit', async e => {
 });
 
 loadMessages();
+
+// ==========================================
+// 参加者募集機能
+// ==========================================
+function setupRecruitmentFeature() {
+    // 1. 投稿フォームに「募集定員」入力欄を自動挿入
+    const form = document.querySelector('#form');
+    const submitBtn = form?.querySelector('button');
+    if (form && submitBtn && !document.querySelector('#recruitment-capacity')) {
+        const capInput = document.createElement('input');
+        capInput.type = 'number';
+        capInput.id = 'recruitment-capacity';
+        capInput.min = '1';
+        capInput.max = '50';
+        capInput.placeholder = '募集定員（任意：1〜50人 / 空欄なら通常投稿）';
+        form.insertBefore(capInput, submitBtn);
+    }
+
+    // 2. 新規投稿APIの完了を検知し、定員が入力されていれば募集情報を登録
+    const originalFetch = window.fetch;
+    window.fetch = async function (url, options) {
+        const response = await originalFetch.apply(this, arguments);
+        if (url === '/api/messages' && options?.method === 'POST' && response.ok) {
+            const capInput = document.querySelector('#recruitment-capacity');
+            const capacity = parseInt(capInput?.value, 10);
+            if (capacity >= 1) {
+                const created = await response.clone().json();
+                await originalFetch('/api/recruitments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message_id: created.id, capacity })
+                });
+                capInput.value = '';
+            }
+        }
+        return response;
+    };
+
+    // 3. 投稿一覧(#messages)が更新されたら各カードに募集UIを描画
+    const messagesEl = document.querySelector('#messages');
+    if (messagesEl) {
+        const observer = new MutationObserver(() => {
+            renderRecruitmentBoxes();
+        });
+        observer.observe(messagesEl, { childList: true });
+    }
+}
+
+async function renderRecruitmentBoxes() {
+    const res = await fetch('/api/recruitments');
+    if (!res.ok) return;
+    const recruitments = await res.json();
+
+    document.querySelectorAll('#messages .message').forEach(article => {
+        // 投稿IDを取得（削除ボタンのdata-id、またはメタ情報の #数字 から取得）
+        const id = article.querySelector('.delete-btn')?.getAttribute('data-id')
+            || article.querySelector('.meta')?.textContent.match(/#(\d+)/)?.[1];
+        if (!id || !recruitments[id]) return;
+
+        // 再描画用に既存の募集枠があれば一度削除
+        article.querySelector('.recruitment-box')?.remove();
+
+        const { capacity, participants } = recruitments[id];
+        const isFull = participants.length >= capacity;
+
+        const box = document.createElement('div');
+        box.className = 'recruitment-box';
+        box.innerHTML = `
+            <div class="recruitment-header">
+                <span class="recruitment-badge ${isFull ? 'full' : 'open'}">
+                    ${isFull ? '満員御礼' : '参加者募集中'}（${participants.length} / ${capacity}人）
+                </span>
+            </div>
+            <div class="recruitment-members">
+                参加者：${participants.length > 0 ? participants.map(escapeHtml).join(', ') : 'まだいません'}
+            </div>
+            ${isFull ? '' : `
+                <div class="recruitment-join-row">
+                    <input type="text" class="join-name-input" maxlength="30" placeholder="参加する名前">
+                    <button type="button" class="join-btn">参加する</button>
+                </div>
+            `}
+        `;
+
+        // 参加ボタンのクリック処理
+        const joinBtn = box.querySelector('.join-btn');
+        if (joinBtn) {
+            joinBtn.addEventListener('click', async () => {
+                const nameInput = box.querySelector('.join-name-input');
+                const name = nameInput.value.trim();
+                if (!name) {
+                    alert('参加する名前を入力してください');
+                    return;
+                }
+                joinBtn.disabled = true;
+                try {
+                    const joinRes = await fetch(`/api/recruitments/${id}/join`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name })
+                    });
+                    if (joinRes.ok) {
+                        await renderRecruitmentBoxes();
+                    } else {
+                        const err = await joinRes.json().catch(() => ({}));
+                        alert(err.error || '参加登録に失敗しました');
+                    }
+                } finally {
+                    joinBtn.disabled = false;
+                }
+            });
+        }
+
+        article.appendChild(box);
+    });
+}
+
+setupRecruitmentFeature();
