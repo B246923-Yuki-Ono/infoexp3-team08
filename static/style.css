@@ -119,3 +119,20 @@ button:hover {
     padding: 0 16px;
     white-space: nowrap;
 }
+
+/* いいねボタン */
+.like-btn {
+    width: auto;
+    padding: 7px 14px;
+    margin: 10px 0;
+    background: #334155;
+    color: #f8fafc;
+    border: 1px solid #475569;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.like-btn:hover {
+    background: #475569;
+}

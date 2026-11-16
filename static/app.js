@@ -12,6 +12,9 @@ async function loadMessages() {
                 <div class="meta">
                     #${x.id} | ${formatDate(x.created_at)}
                 </div>
+                <button class="like-btn" data-id="${x.id}">
+                   👍 いいね ${x.likes}
+                </button>
 
                 <button class="edit-btn" data-id="${x.id}">
                     編集
@@ -41,7 +44,22 @@ async function loadMessages() {
             }
         });
     });
+    // いいねボタンのイベント登録
+    document.querySelectorAll('.like-btn').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        const id = e.currentTarget.getAttribute('data-id');
 
+        const res = await fetch(`/api/messages/${id}/like`, {
+            method: 'POST'
+        });
+
+        if (res.ok) {
+            await loadMessages();
+        } else {
+            alert('いいねに失敗しました');
+        }
+      });
+    });
     // 編集ボタンのイベント登録
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', e => {
