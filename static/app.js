@@ -12,15 +12,15 @@ async function loadMessages() {
                 <div class="meta">
                     #${x.id} | ${formatDate(x.created_at)}
                 </div>
-
-                <button class="edit-btn" data-id="${x.id}">
-                    編集
+              <button class="reply-trigger-btn" data-id="${x.id}" data-name="${escapeHtml(x.name)}" style="margin-top: 5px;">
+                    #${x.id} に返信する
                 </button>
-
-                <button class="delete-btn" data-id="${x.id}">
-                    削除
-                </button>
+                <div style="margin-top: 10px;">
+                    <button class="edit-btn" data-id="${x.id}">編集</button>
+                    <button class="delete-btn" data-id="${x.id}">削除</button>
+                </div>
             </article>
+
         `).join('');
 
     // 削除ボタンのイベント登録
@@ -39,6 +39,19 @@ async function loadMessages() {
             } else {
                 alert('削除に失敗しました');
             }
+        });
+    });
+
+    // 「〇番に返信する」ボタンが押されたとき、上の投稿フォームに自動で「>>〇」を挿入する親切設計
+    document.querySelectorAll('.reply-trigger-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+            const id = e.currentTarget.getAttribute('data-id');
+            const name = e.currentTarget.getAttribute('data-name');
+            const messageArea = document.querySelector('#message');
+            
+            // メッセージ欄に「>>ID (名前さんへ): 」のようなアンカーを自動入力
+            messageArea.value = `>>${id} (${name}さんへ)\n`;
+            messageArea.focus();
         });
     });
 
